@@ -1,4 +1,3 @@
-# src/sentinel/core/collectors/linux.py
 import shutil
 from datetime import datetime, timezone
 
