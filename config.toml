@@ -1,0 +1,5 @@
+[thresholds]
+disk_usage_warn = 80
+disk_usage_critical = 95
+patch_updates_max_days_stale = 14
+failed_units_alert = true
