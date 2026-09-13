@@ -16,7 +16,7 @@ def collect(path: str | None = None) -> list[CheckResult]:
     single root-only check would miss that.
     """
     mounts = [path] if path else DEFAULT_MOUNTS
-    results = []
+    results: list[CheckResult] = []
     
     for mount in mounts:
         try:
@@ -29,7 +29,7 @@ def collect(path: str | None = None) -> list[CheckResult]:
             CheckResult(
                collector="disk_usage",
                target=mount,
-               timestamp=datetime.now(timezone.utc).isoformat(),
+               timestamp=datetime.now(timezone.utc),
                metrics={
                     "total_bytes": usage.total,
                     "used_bytes": usage.used,
