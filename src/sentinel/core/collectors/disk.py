@@ -1,6 +1,9 @@
+import logging
 import shutil
 from datetime import datetime, timezone
 from sentinel.core.models import CheckResult
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_MOUNTS = ["/", "/var", "/home"]
 
@@ -19,6 +22,7 @@ def collect(path: str | None = None) -> list[CheckResult]:
         try:
             usage = shutil.disk_usage(mount)
         except FileNotFoundError:
+            logger.warning("Mount path not found, skipping: %s", mount)
             continue
         
         results.append(
@@ -34,4 +38,6 @@ def collect(path: str | None = None) -> list[CheckResult]:
                }
             )
         )
+        
+    logger.info("disk_usage collector completed, checked %d mount(s)", len(results))    
     return results

@@ -1,8 +1,11 @@
 import json
 import typer
+from sentinel.core.logging_config import setup_logging
 from sentinel.core.collectors.disk import collect
 
 app = typer.Typer()
+
+setup_logging()
 
 @app.command()
 def disk(path: str = None):
