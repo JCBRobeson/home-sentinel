@@ -8,7 +8,7 @@ app = typer.Typer()
 setup_logging()
 
 @app.command()
-def disk(path: str = None):
+def disk(path: str | None = None):
     """Print disk usage as a JSON array of CheckResults."""
     results = collect(path)
     print(json.dumps([r.model_dump(mode="json") for r in results], indent=2))

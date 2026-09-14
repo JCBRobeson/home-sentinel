@@ -16,20 +16,20 @@ def collect(path: str | None = None) -> list[CheckResult]:
     single root-only check would miss that.
     """
     mounts = [path] if path else DEFAULT_MOUNTS
-    results = []
+    results: list[CheckResult] = []
     
     for mount in mounts:
         try:
             usage = shutil.disk_usage(mount)
         except FileNotFoundError:
-            logger.warning("Mount path not found, skipping: %s", mount)
+            logger.warning(f"Mount path not found, skipping: {mount}")
             continue
         
         results.append(
             CheckResult(
                collector="disk_usage",
                target=mount,
-               timestamp=datetime.now(timezone.utc).isoformat(),
+               timestamp=datetime.now(timezone.utc),
                metrics={
                     "total_bytes": usage.total,
                     "used_bytes": usage.used,
@@ -39,5 +39,5 @@ def collect(path: str | None = None) -> list[CheckResult]:
             )
         )
         
-    logger.info("disk_usage collector completed, checked %d mount(s)", len(results))    
+    logger.info(f"disk_usage collector completed, checked {len(results)} mount(s)")    
     return results
