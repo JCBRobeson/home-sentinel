@@ -22,7 +22,7 @@ def collect(path: str | None = None) -> list[CheckResult]:
         try:
             usage = shutil.disk_usage(mount)
         except FileNotFoundError:
-            logger.warning(f"Mount path not found, skipping: {mount}")
+            logger.warning("Mount path not found, skipping: %s", mount)
             continue
         
         results.append(
@@ -39,5 +39,5 @@ def collect(path: str | None = None) -> list[CheckResult]:
             )
         )
         
-    logger.info(f"disk_usage collector completed, checked {len(results)} mount(s)")    
+    logger.info("disk_usage collector completed, checked %d mount(s)", len(results))  
     return results
