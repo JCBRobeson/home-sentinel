@@ -65,3 +65,4 @@ sudo usermod -aG sentinel <their-username>
 **Alternative for later, not implemented:** systemd's own `journald` can capture a service's output directly, queryable via `journalctl -u sentinel`, with its own separate access model (see the `systemd-journal` group grant in the Service Account section above — used currently for the journald _collector_, not for Sentinel's own output). Worth knowing this exists if flat-file logging ever stops being the right fit; not needed for anything currently built.
 
 **Revisit in Phase 6:** once a systemd unit file exists, its `LogsDirectory=` directive can create and own this directory declaratively instead of the manual `mkdir`/`chown`/`chmod` above — at that point, drop this manual setup section and document the unit file's handling instead.
+Systemctl Begins
