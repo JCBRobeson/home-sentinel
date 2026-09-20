@@ -15,7 +15,7 @@ def collect() -> list[CheckResult]:
     
     try:
         failed_units: CompletedProcess[str] = subprocess.run(args=["systemctl", "list-units", "-t", "service", "--state=failed","--no-legend", "--plain"], capture_output=True, text=True)
-        failed_units_lines = failed_units.stdout.splitlines()
+        failed_units_lines: list[str] = failed_units.stdout.splitlines()
     except FileNotFoundError:
        logger.warning("systemctl: command not found")
        return results     
@@ -23,9 +23,7 @@ def collect() -> list[CheckResult]:
     if failed_units.returncode != 0:
         logger.error("Error Code: %d : %s", failed_units.returncode, failed_units.stderr)
         return results
-    if len(failed_units_lines) == 0:
-        logger.info("All units healthy")    
-        return results
+    
     for line in failed_units_lines:
         sub_line = line.split(maxsplit=4)
         if len(sub_line) < 5:
