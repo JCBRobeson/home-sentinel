@@ -39,5 +39,5 @@ def collect(path: str | None = None) -> list[CheckResult]:
             )
         )
         
-    logger.info("disk_usage collector completed, checked %d mount(s)", {len(results)})    
+    logger.info("disk_usage collector completed, checked %d mount(s)", len(results))  
     return results
