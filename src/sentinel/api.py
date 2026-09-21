@@ -7,10 +7,12 @@ app = FastAPI()
 
 setup_logging()
 
+
 @app.get("/disk")
 def disk(path: str | None = None):
     results = disk_collect(path)
     return [r.model_dump(mode="json") for r in results]
+
 
 @app.get("/failed-units")
 def failed_units():
