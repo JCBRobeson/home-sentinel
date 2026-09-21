@@ -9,7 +9,10 @@ logger = logging.getLogger(__name__)
 def collect() -> list[CheckResult]:
     """
     Failed units collector.
-    Aggregates data on failed units via systemd.
+    Aggregates data on failed systemd service units.
+    Filters to --state=failed at the systemctl level (not in Python)
+    so the collector only produces output when something is actually
+    wrong, rather than reporting every healthy service on every run.
     """
     results: list[CheckResult] = []
     
