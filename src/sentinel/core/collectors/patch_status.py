@@ -14,6 +14,11 @@ class PackageUpdate(NamedTuple):
     repo: str
 
 
+class AdvisoryInfo(NamedTuple):
+    advisory_id: str
+    severity_or_type: str
+
+
 def collect() -> list[CheckResult]:
 
     results: list[CheckResult] = []
@@ -32,6 +37,10 @@ def _collect_package_updates() -> list[CheckResult]:
         updates: CompletedProcess[str] = subprocess.run(
             args=["dnf", "check-update"], capture_output=True, text=True
         )
+        updates_severity_or_type: CompletedProcess[str] = subprocess.run(
+            args=["dnf", "updateinfo", "list"], capture_output=True, text=True
+        )
+        print(_parse_updateinfo(updates_severity_or_type.stdout))
     except FileNotFoundError:
         logger.warning("dnf check-update: command not found")
         return results
@@ -50,6 +59,7 @@ def _collect_package_updates() -> list[CheckResult]:
                 details={"version": update.version, "repo": update.repo},
             )
         )
+
     logger.info(
         "patch_status collector complete. Found %d package(s) updates",
         len(results),
@@ -64,12 +74,30 @@ def _parse_check_update(stdout: str) -> list[PackageUpdate]:
 
     for line in stdout_lines:
         parts = line.split()
+
         if len(parts) != 3:
             continue
-        results.append(
-            PackageUpdate(name_arch=parts[0], version=parts[1], repo=parts[2])
-        )
 
+        name_arch, version, repo = parts
+        results.append(PackageUpdate(name_arch=name_arch, version=version, repo=repo))
+
+    return results
+
+
+def _parse_updateinfo(stdout: str) -> dict[str, list[AdvisoryInfo]]:
+    """Pure parse: NEVRA -> list of {advisory_id, type_or_severity} from updateinfo's stdout."""
+    stdout_lines = stdout.splitlines()
+    results: dict[str, list[AdvisoryInfo]] = {}
+
+    for line in stdout_lines:
+        parts = line.split()
+
+        if len(parts) != 3:
+            continue
+        advisory_id, severity_or_type, nevra = parts
+        results.setdefault(nevra, []).append(
+            AdvisoryInfo(advisory_id=advisory_id, severity_or_type=severity_or_type)
+        )
     return results
 
 
