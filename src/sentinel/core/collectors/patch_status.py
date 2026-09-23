@@ -43,14 +43,34 @@ def _collect_package_updates() -> list[CheckResult]:
     if catch_return_code(updateinfo.returncode, {1, 3}, updateinfo.stderr) is None:
         return results
 
+    advisories_by_nevra = _parse_updateinfo(updateinfo.stdout)
+
     for update in _parse_check_update(updates.stdout):
+
+        update_advisories = advisories_by_nevra.get(
+            _build_nevra(name_arch=update.name_arch, version=update.version), []
+        )
+
+        is_security_update = any(
+            "Sec" in advisory.severity_or_type for advisory in update_advisories
+        )
+
+        json_safe_advisories = [adv._asdict() for adv in update_advisories]
+
         results.append(
             CheckResult(
                 collector="patch_status",
                 target=update.name_arch,
                 timestamp=datetime.now(timezone.utc),
-                metrics={"update_available": True},
-                details={"version": update.version, "repo": update.repo},
+                metrics={
+                    "update_available": True,
+                    "is_security_update": is_security_update,
+                },
+                details={
+                    "version": update.version,
+                    "repo": update.repo,
+                    "advisories": json_safe_advisories,
+                },
             )
         )
 
@@ -93,6 +113,13 @@ def _parse_updateinfo(stdout: str) -> dict[str, list[AdvisoryInfo]]:
             AdvisoryInfo(advisory_id=advisory_id, severity_or_type=severity_or_type)
         )
     return results
+
+
+def _build_nevra(name_arch: str, version: str) -> str:
+    """This helper builds the nevra to match the serverity information provided by updateinfo.
+    This will be used to map update severity to check-updates package information."""
+    name, arch = name_arch.rsplit(".", 1)
+    return f"{name}-{version}.{arch}"
 
 
 def _collect_reboot_status() -> list[CheckResult]:
