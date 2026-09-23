@@ -1,9 +1,8 @@
 import logging
-import subprocess
-from typing import NamedTuple
-from subprocess import CompletedProcess
 from datetime import datetime, timezone
+from typing import NamedTuple
 from sentinel.core.models import CheckResult
+from sentinel.core.process import run_command, catch_return_code
 
 logger = logging.getLogger(__name__)
 
@@ -33,20 +32,15 @@ def _collect_package_updates() -> list[CheckResult]:
 
     results: list[CheckResult] = []
 
-    try:
-        updates: CompletedProcess[str] = subprocess.run(
-            args=["dnf", "check-update"], capture_output=True, text=True
-        )
-        updates_severity_or_type: CompletedProcess[str] = subprocess.run(
-            args=["dnf", "updateinfo", "list"], capture_output=True, text=True
-        )
-        print(_parse_updateinfo(updates_severity_or_type.stdout))
-    except FileNotFoundError:
-        logger.warning("dnf check-update: command not found")
+    updates = run_command(["dnf", "check-update"])
+    updateinfo = run_command(["dnf", "updateinfo", "list"])
+
+    if updates is None or updateinfo is None:
         return results
 
-    if updates.returncode == 1:
-        logger.error("Error Code: %d : %s", updates.returncode, updates.stderr)
+    if catch_return_code(updates.returncode, {1, 3}, updates.stderr) is None:
+        return results
+    if catch_return_code(updateinfo.returncode, {1, 3}, updateinfo.stderr) is None:
         return results
 
     for update in _parse_check_update(updates.stdout):
