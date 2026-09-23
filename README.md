@@ -90,7 +90,3 @@ This one covers four separate concerns under one collector, since they're really
 4. **Patch staleness**, via `dnf history list`, using dnf's own transaction history instead of anything SQLite or database dependent. Not built yet. The key detail here is that "last patched" needs to filter by the Action column actually containing an Upgrade, not just by scanning command text, since a plain `install vim-enhanced` can still trigger dependency upgrades under the hood.
 
 I deliberately did not go anywhere near `/var/lib/dnf/history.sqlite` directly, even though it's technically readable. The schema isn't stable across dnf versions, the storage path itself has moved before, and it's disposable cache from dnf's own point of view (corruption reports just say delete it and let dnf rebuild it). `dnf history list` is the real, maintained interface, so that's what I'm using.
-
-The check-update and updateinfo parsers are both pure functions, no subprocess calls inside them, so they can be tested against literal sample text with zero mocking. The subprocess plumbing itself lives in a shared `core/process.py` (`run_command` and `catch_return_code`) so I'm not duplicating the same try/except/return code dance across every collector.
-
-Tests for `patch_status.py` are still pending. Concerns 1 and 2 are fully built and verified against real ludmila output. Concerns 3 and 4 are next.
