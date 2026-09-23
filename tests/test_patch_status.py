@@ -2,6 +2,7 @@
 from sentinel.core.collectors.patch_status import (
     _parse_check_update,
     _parse_updateinfo,
+    _build_nevra,
     AdvisoryInfo,
     PackageUpdate,
 )
@@ -39,3 +40,12 @@ def test_parse_updateinfo() -> None:
             AdvisoryInfo(advisory_id="RHBA-2026:67590", severity_or_type="bugfix")
         ],
     }
+
+
+def test_build_nevra() -> None:
+
+    test_result_generic = _build_nevra("kernel.x86_64", "6.12.0-211.56.1.el10_2")
+    test_result_epoch = _build_nevra("microcode_ctl.noarch", "4:20260812-0.el10_2")
+
+    assert test_result_generic == "kernel-6.12.0-211.56.1.el10_2.x86_64"
+    assert test_result_epoch == "microcode_ctl-4:20260812-0.el10_2.noarch"
