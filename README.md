@@ -24,7 +24,7 @@ Journald log access is gated by group membership, not file permissions or sudo. 
 
 **3. No sudoers entry.**
 
-Every v1 collector I've built so far (disk usage, systemd unit status, package update status, and eventually the passwd/wheel group audit) reads data that's world readable on a standard RHEL box. `sentinel` gets no sudo grants at all. That's intentional, not something I forgot. If a future check genuinely needs elevated access, I'll add a narrowly scoped rule under `/etc/sudoers.d/sentinel` for that specific command when I actually need it, not before.
+Every v1 collector I've built so far (disk usage, systemd unit status, package update status, and eventually the passwd/wheel group audit) reads data that's world readable on a standard RHEL box. `sentinel` gets no sudo grants at all. That's intentional. If a future check genuinely needs elevated access, I'll scope a narrow, single command rule under `/etc/sudoers.d/sentinel` for exactly that need, rather than granting broad access up front.
 
 ## Logging
 
