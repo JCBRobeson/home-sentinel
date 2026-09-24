@@ -1,8 +1,10 @@
 # pyright: reportPrivateUsage=false
+from subprocess import CompletedProcess
 from sentinel.core.collectors.patch_status import (
     _parse_check_update,
     _parse_updateinfo,
     _build_nevra,
+    _collect_package_updates,
     AdvisoryInfo,
     PackageUpdate,
 )
@@ -29,14 +31,16 @@ def test_parse_check_update() -> None:
 
 def test_parse_updateinfo() -> None:
 
-    testr_str = (
-        "Not root, Subscription Management repositories not updated\nless\nRHBA-2026:69944 bugfix bind-libs-32:9.18.33-15.el10_2.11.x86_64\nRHBA-2026:67590 bugfix cairo-1.18.2-2.el10_2.1.x86_64"
-    )
+    testr_str = "Not root, Subscription Management repositories not updated\nless\nRHBA-2026:69944 bugfix bind-libs-32:9.18.33-15.el10_2.11.x86_64\nRHBA-2026:67590 bugfix cairo-1.18.2-2.el10_2.1.x86_64"
     test_result = _parse_updateinfo(testr_str)
 
     assert test_result == {
-        "bind-libs-32:9.18.33-15.el10_2.11.x86_64": [AdvisoryInfo(advisory_id="RHBA-2026:69944", severity_or_type="bugfix")],
-        "cairo-1.18.2-2.el10_2.1.x86_64": [AdvisoryInfo(advisory_id="RHBA-2026:67590", severity_or_type="bugfix")],
+        "bind-libs-32:9.18.33-15.el10_2.11.x86_64": [
+            AdvisoryInfo(advisory_id="RHBA-2026:69944", severity_or_type="bugfix")
+        ],
+        "cairo-1.18.2-2.el10_2.1.x86_64": [
+            AdvisoryInfo(advisory_id="RHBA-2026:67590", severity_or_type="bugfix")
+        ],
     }
 
 
@@ -60,3 +64,18 @@ def test_parse_updateinfo_same_nevra_multiple_advisories() -> None:
             AdvisoryInfo(advisory_id="RHBA-2026:99999", severity_or_type="bugfix"),
         ],
     }
+
+
+# def test_collect_package_updates(monkeyPatch: pytest.MonkeyPatch) -> None:
+#     def fake_run_command(args: list[str]) -> CompletedProcess[str] | None:
+#         return CompletedProcess(
+#             args=[
+#                 "dnf",
+#                 "check-update",
+#             ],
+#             returncode=0,
+#             stdout=(
+#                 "This is more than three parts, and you know it.\nyggdrasil-worker-package-manager.x86_64 0.2.3-7.el10_2.8 rhel-10-for-x86_64-appstream-rpms\nsudo.x86_64 1.9.17-10.p2.el10_2.6 rhel-10-for-x86_64-baseos-rpms\nless"
+#             ),
+#             stderr="",
+#         )
