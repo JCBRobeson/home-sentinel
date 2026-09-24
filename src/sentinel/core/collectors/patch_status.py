@@ -35,15 +35,19 @@ def _collect_package_updates() -> list[CheckResult]:
     updates = run_command(["dnf", "check-update"])
     updateinfo = run_command(["dnf", "updateinfo", "list"])
 
-    if updates is None or updateinfo is None:
+    if updates is None:
         return results
 
     if catch_return_code(updates.returncode, {1, 3}, updates.stderr) is None:
         return results
-    if catch_return_code(updateinfo.returncode, {1, 3}, updateinfo.stderr) is None:
-        return results
 
-    advisories_by_nevra = _parse_updateinfo(updateinfo.stdout)
+    if (
+        updateinfo is None
+        or catch_return_code(updateinfo.returncode, {1, 3}, updateinfo.stderr) is None
+    ):
+        advisories_by_nevra = {}
+    else:
+        advisories_by_nevra = _parse_updateinfo(updateinfo.stdout)
 
     for update in _parse_check_update(updates.stdout):
 
