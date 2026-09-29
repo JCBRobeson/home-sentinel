@@ -33,13 +33,14 @@ def _collect_package_updates() -> list[CheckResult]:
     results: list[CheckResult] = []
 
     updates = run_command(["dnf", "check-update"])
-    updateinfo = run_command(["dnf", "updateinfo", "list"])
 
     if updates is None:
         return results
 
     if catch_return_code(updates.returncode, {1, 3}, updates.stderr) is None:
         return results
+
+    updateinfo = run_command(["dnf", "updateinfo", "list"])
 
     if (
         updateinfo is None
@@ -129,6 +130,25 @@ def _build_nevra(name_arch: str, version: str) -> str:
 def _collect_reboot_status() -> list[CheckResult]:
 
     results: list[CheckResult] = []
+    reboot_status = run_command(["dnf", "needs-restarting", "-r"])
+
+    if reboot_status is None:
+        return results
+
+    reboot_return_code = reboot_status.returncode
+
+    results.append(
+        CheckResult(
+            collector="patch_status",
+            target=None,
+            timestamp=datetime.now(timezone.utc),
+            metrics={"reboot-required": True if not reboot_return_code else False},
+            details={
+                "message": ("Reboot required" if not reboot_return_code else "Reboot not required"),
+                "reboot_required": True if not reboot_return_code else False,
+            },
+        )
+    )
 
     return results
 
