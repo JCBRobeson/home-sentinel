@@ -7,6 +7,7 @@ from sentinel.core.collectors.patch_status import (
     _parse_updateinfo,
     _build_nevra,
     _collect_package_updates,
+    _collect_reboot_status,
     AdvisoryInfo,
     PackageUpdate,
 )
@@ -155,3 +156,49 @@ def test_collect_package_updates_updateinfo_missing(
     assert len(results) == 1
     assert results[0].metrics == {"update_available": True, "is_security_update": False}
     assert results[0].details["advisories"] == []
+
+
+def test_collect_reboot_status_reboot_not_required(monkeypatch: pytest.MonkeyPatch) -> None:
+
+    def fake_run_command(args: list[str]) -> CompletedProcess[str] | None:
+        return CompletedProcess(
+            args=args,
+            returncode=0,
+            stdout="Not root, Subscription Management repositories not updated\nNo core libraries or services have been updated since boot-up.\nReboot should not be necessary.",
+            stderr="",
+        )
+
+    monkeypatch.setattr(patch_status, "run_command", fake_run_command)
+
+    results = _collect_reboot_status()
+    assert len(results) == 1
+    assert results[0].details["description"] == [
+        "No core libraries or services have been updated since boot-up.",
+        "Reboot should not be necessary.",
+    ]
+    assert results[0].details["packages"] == []
+    assert results[0].metrics["reboot_required"] == False
+
+
+def test_collect_reboot_status_reboot_required(monkeypatch: pytest.MonkeyPatch) -> None:
+
+    def fake_run_command(args: list[str]) -> CompletedProcess[str] | None:
+        return CompletedProcess(
+            args=args,
+            returncode=1,
+            stdout="Core libraries or services have been updated since boot-up:\n * kernel\n * systemd\n\nReboot is required to fully utilize these updates.\n",
+            stderr="",
+        )
+
+    monkeypatch.setattr(patch_status, "run_command", fake_run_command)
+
+    results = _collect_reboot_status()
+    assert len(results) == 1
+    assert results[0].details["description"] == [
+        "Core libraries or services have been updated since boot-up:",
+        " * kernel",
+        " * systemd",
+        "Reboot is required to fully utilize these updates.",
+    ]
+    assert results[0].details["packages"] == ["kernel", "systemd"]
+    assert results[0].metrics["reboot_required"] == True

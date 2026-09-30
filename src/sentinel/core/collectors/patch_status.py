@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timezone
 from typing import NamedTuple
 from sentinel.core.models import CheckResult
-from sentinel.core.process import run_command, catch_return_code
+from sentinel.core.process import run_command, catch_return_code, strip_noise, extract_by_prefix
 
 logger = logging.getLogger(__name__)
 
@@ -144,10 +144,21 @@ def _collect_reboot_status() -> list[CheckResult]:
             timestamp=datetime.now(timezone.utc),
             metrics={"reboot_required": bool(reboot_return_code)},
             details={
-                "message": ("Reboot required" if reboot_return_code else "Reboot not required"),
+                "description": strip_noise(
+                    reboot_status.stdout, ("Not root,", "Last metadata expiration check:")
+                ),
+                "packages": extract_by_prefix(reboot_status.stdout, "*"),
             },
         )
     )
+
+    # NOTE: dnf's general docs say 1 = "an error dnf handled" for most subcommands,
+    # but needs-restarting -r's own docs override that meaning specifically for
+    # this flag: 1 = reboot required, 0 = not required. If -r ever hit a genuine
+    # error that also happened to exit 1, this would misreport it as "reboot
+    # required" rather than surfacing the error. Accepted looseness for now —
+    # disambiguating would mean inspecting stdout content, more than this
+    # concern calls for.
 
     return results
 
