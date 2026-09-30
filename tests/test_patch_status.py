@@ -172,10 +172,10 @@ def test_collect_reboot_status_reboot_not_required(monkeypatch: pytest.MonkeyPat
 
     results = _collect_reboot_status()
     assert len(results) == 1
-    assert results[0].details["description"] == [
-        "No core libraries or services have been updated since boot-up.",
-        "Reboot should not be necessary.",
-    ]
+    assert (
+        results[0].details["description"]
+        == "No core libraries or services have been updated since boot-up.\nReboot should not be necessary."
+    )
     assert results[0].details["packages"] == []
     assert results[0].metrics["reboot_required"] == False
 
@@ -194,11 +194,9 @@ def test_collect_reboot_status_reboot_required(monkeypatch: pytest.MonkeyPatch) 
 
     results = _collect_reboot_status()
     assert len(results) == 1
-    assert results[0].details["description"] == [
-        "Core libraries or services have been updated since boot-up:",
-        " * kernel",
-        " * systemd",
-        "Reboot is required to fully utilize these updates.",
-    ]
+    assert (
+        results[0].details["description"]
+        == "Core libraries or services have been updated since boot-up:\n * kernel\n * systemd\nReboot is required to fully utilize these updates."
+    )
     assert results[0].details["packages"] == ["kernel", "systemd"]
     assert results[0].metrics["reboot_required"] == True
