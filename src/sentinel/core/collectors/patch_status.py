@@ -142,10 +142,9 @@ def _collect_reboot_status() -> list[CheckResult]:
             collector="patch_status",
             target=None,
             timestamp=datetime.now(timezone.utc),
-            metrics={"reboot-required": True if not reboot_return_code else False},
+            metrics={"reboot_required": bool(reboot_return_code)},
             details={
-                "message": ("Reboot required" if not reboot_return_code else "Reboot not required"),
-                "reboot_required": True if not reboot_return_code else False,
+                "message": ("Reboot required" if reboot_return_code else "Reboot not required"),
             },
         )
     )
