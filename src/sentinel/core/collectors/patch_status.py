@@ -144,8 +144,10 @@ def _collect_reboot_status() -> list[CheckResult]:
             timestamp=datetime.now(timezone.utc),
             metrics={"reboot_required": bool(reboot_return_code)},
             details={
-                "description": strip_noise(
-                    reboot_status.stdout, ("Not root,", "Last metadata expiration check:")
+                "description": "\n".join(
+                    strip_noise(
+                        reboot_status.stdout, ("Not root,", "Last metadata expiration check:")
+                    )
                 ),
                 "packages": extract_by_prefix(reboot_status.stdout, "*"),
             },
