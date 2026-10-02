@@ -37,9 +37,7 @@ def collect() -> list[CheckResult]:
         return results
 
     if failed_units.returncode != 0:
-        logger.error(
-            "Error Code: %d : %s", failed_units.returncode, failed_units.stderr
-        )
+        logger.error("Error Code: %d : %s", failed_units.returncode, failed_units.stderr)
         return results
 
     for line in failed_units_lines:
@@ -61,7 +59,5 @@ def collect() -> list[CheckResult]:
                 },
             )
         )
-    logger.info(
-        "failed_units collector completed. Found %d failing units", len(results)
-    )
+    logger.info("failed_units collector completed. Found %d failing units", len(results))
     return results
