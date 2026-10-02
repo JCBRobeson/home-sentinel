@@ -198,9 +198,67 @@ def _collect_patch_staleness() -> list[CheckResult]:
 
     if history is None:
         return results
+    if catch_return_code(history.returncode, {1, 3}, history.stderr) is None:
+        return results
 
     parsed_history = _parse_staleness(history.stdout)
 
-    print(parsed_history)
+    if len(parsed_history) == 0:
+        logger.info("patch_status collector complete. No patch history found")
+        results.append(
+            CheckResult(
+                collector="patch_status",
+                target=None,
+                timestamp=datetime.now(timezone.utc),
+                metrics={"patch_history_found": False},
+                details={
+                    "last_update": None,
+                    "last_update_action": None,
+                    "days_since_last_patch": None,
+                },
+            )
+        )
+        return results
+
+    qualifying_entries: list[StalenessInfo] = [
+        entry
+        for entry in parsed_history
+        if "U" in entry.update_action.split(", ") or "Upgrade" in entry.update_action.split(", ")
+    ]
+
+    if len(qualifying_entries) == 0:
+        logger.info(
+            "patch_status collector complete. No qualifying patch updates found. Only install/erase actions found."
+        )
+        results.append(
+            CheckResult(
+                collector="patch_status",
+                target=None,
+                timestamp=datetime.now(timezone.utc),
+                metrics={"patch_history_found": True},
+                details={
+                    "last_update": None,
+                    "last_update_action": None,
+                    "days_since_last_patch": None,
+                },
+            )
+        )
+        return results
+
+    latest_entry = max(qualifying_entries, key=lambda e: e.last_update)
+
+    results.append(
+        CheckResult(
+            collector="patch_status",
+            target=None,
+            timestamp=datetime.now(timezone.utc),
+            metrics={"patch_history_found": True},
+            details={
+                "last_update": latest_entry.last_update.isoformat(),
+                "last_update_action": latest_entry.update_action,
+                "days_since_last_patch": (datetime.now() - latest_entry.last_update).days,
+            },
+        )
+    )
 
     return results
