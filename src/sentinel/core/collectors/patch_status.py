@@ -18,6 +18,11 @@ class AdvisoryInfo(NamedTuple):
     severity_or_type: str
 
 
+class StalenessInfo(NamedTuple):
+    last_update: datetime
+    update_action: str
+
+
 def collect() -> list[CheckResult]:
 
     results: list[CheckResult] = []
@@ -120,6 +125,26 @@ def _parse_updateinfo(stdout: str) -> dict[str, list[AdvisoryInfo]]:
     return results
 
 
+def _parse_staleness(stdout: str) -> list[StalenessInfo]:
+    """Pure parse: (last_update, update_action) tuples from history list's stdout."""
+    results: list[StalenessInfo] = []
+
+    for line in stdout.splitlines():
+        parts = line.split("|")
+        if len(parts) != 5:
+            continue
+        if parts[0].strip() == "ID":
+            continue
+        results.append(
+            StalenessInfo(
+                last_update=datetime.strptime(parts[2].strip(), "%Y-%m-%d %H:%M"),
+                update_action=parts[3].strip(),
+            )
+        )
+
+    return results
+
+
 def _build_nevra(name_arch: str, version: str) -> str:
     """This helper builds the nevra to match the serverity information provided by updateinfo.
     This will be used to map update severity to check-updates package information."""
@@ -168,5 +193,14 @@ def _collect_reboot_status() -> list[CheckResult]:
 def _collect_patch_staleness() -> list[CheckResult]:
 
     results: list[CheckResult] = []
+
+    history = run_command(["dnf", "history", "list"])
+
+    if history is None:
+        return results
+
+    parsed_history = _parse_staleness(history.stdout)
+
+    print(parsed_history)
 
     return results
