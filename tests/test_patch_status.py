@@ -340,3 +340,30 @@ ID     | Command line                                                           
         == datetime.strptime("2026-09-30 09:05", "%Y-%m-%d %H:%M").isoformat()
     )
     assert results[0].details["last_update_action"] == "C, E, I, U"
+    expected_days = (datetime.now() - datetime.strptime("2026-09-30 09:05", "%Y-%m-%d %H:%M")).days
+    assert results[0].details["days_since_last_patch"] == expected_days
+
+
+def test_collect_patch_staleness_bad_return_code(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fake_run_command(args: list[str]) -> CompletedProcess[str] | None:
+        return CompletedProcess(
+            args=args,
+            returncode=1,
+            stdout="",
+            stderr="boom",
+        )
+
+    monkeypatch.setattr(patch_status, "run_command", fake_run_command)
+
+    results = _collect_patch_staleness()
+    assert results == []
+
+
+def test_collect_patch_staleness_missing(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fake_run_command(args: list[str]) -> CompletedProcess[str] | None:
+        return None
+
+    monkeypatch.setattr(patch_status, "run_command", fake_run_command)
+
+    results = _collect_patch_staleness()
+    assert results == []
